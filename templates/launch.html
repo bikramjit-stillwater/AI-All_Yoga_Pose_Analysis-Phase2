@@ -26,15 +26,14 @@
     </header>
 
     <!-- ==========================================================
-         STAGE 1 — Guide Video
-         Visible on load. Auto-plays muted. When it ends → modal.
+         STAGE 1 — Guide Video (visible by default)
          ========================================================== -->
     {% if module.guide_video %}
     <section id="stageVideo" class="stage stage-active">
         <div class="stage-intro">
             <p class="stage-eyebrow">Step 1 of 2</p>
             <h2 class="stage-title">Watch the <em>guide</em>.</h2>
-            <p class="stage-sub">A short orientation for <strong>{{ module.english_name }}</strong>. When the video ends, you'll be prompted to begin your evaluation.</p>
+            <p class="stage-sub">A short orientation for <strong>{{ module.english_name }}</strong>. The practice space is warming up in the background while you watch.</p>
         </div>
 
         <div class="video-wrap">
@@ -62,25 +61,24 @@
     {% endif %}
 
     <!-- ==========================================================
-         STAGE 2 — Practice (the actual Streamlit app, embedded)
-         Hidden until user confirms "Start & Evaluate" in the modal.
+         STAGE 2 — Practice (iframe pre-loads NOW, hidden behind stage 1)
          ========================================================== -->
     <section id="stagePractice" class="stage {% if not module.guide_video %}stage-active{% endif %}">
         <div class="practice-frame-wrap">
             <div class="launch-loader" id="loader">
                 <div class="ripple-loader"><span></span><span></span><span></span></div>
-                <p>Waking the practice space…</p>
-                <p class="loader-sub">First load can take 30–60s on free hosting.</p>
+                <p id="loaderMsg">Waking the practice space…</p>
+                <p class="loader-sub" id="loaderSub">First load can take 30–60s on free hosting.</p>
             </div>
 
+            <!-- Iframe src is set IMMEDIATELY so cold-start happens during video playback -->
             <iframe
                 id="practiceFrame"
-                src=""
+                src="{{ module.url }}"
                 title="{{ module.name }}"
                 allow="camera; microphone; autoplay; fullscreen; display-capture"
                 allowfullscreen
-                referrerpolicy="strict-origin-when-cross-origin"
-                onload="document.getElementById('loader').classList.add('hidden')"></iframe>
+                referrerpolicy="strict-origin-when-cross-origin"></iframe>
         </div>
 
         <p class="practice-fallback">
@@ -91,7 +89,7 @@
 </div>
 
 <!-- ==========================================================
-     MODAL — Appears when video ends (or user clicks "Skip Guide")
+     MODAL — "Ready to Begin?"
      ========================================================== -->
 <div id="readyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
     <div class="modal-backdrop"></div>
@@ -127,23 +125,66 @@
 {% block scripts %}
 <script>
     (function () {
-        const video       = document.getElementById('guideVideo');
-        const modal       = document.getElementById('readyModal');
-        const skipBtn     = document.getElementById('skipBtn');
-        const stageVideo  = document.getElementById('stageVideo');
+        const video         = document.getElementById('guideVideo');
+        const modal         = document.getElementById('readyModal');
+        const skipBtn       = document.getElementById('skipBtn');
+        const stageVideo    = document.getElementById('stageVideo');
         const stagePractice = document.getElementById('stagePractice');
-        const iframe     = document.getElementById('practiceFrame');
-        const loader     = document.getElementById('loader');
-        const modalYes   = document.getElementById('modalYes');
-        const modalNo    = document.getElementById('modalNo');
+        const iframe        = document.getElementById('practiceFrame');
+        const loader        = document.getElementById('loader');
+        const loaderMsg     = document.getElementById('loaderMsg');
+        const loaderSub     = document.getElementById('loaderSub');
+        const modalYes      = document.getElementById('modalYes');
+        const modalNo       = document.getElementById('modalNo');
 
         const PRACTICE_URL = {{ module.url | tojson }};
         const HAS_VIDEO    = !!video;
 
+        let iframeLoaded = false;
+
+        // -- Iframe load tracking --
+        // Iframe src is already set in HTML, so it starts loading the moment
+        // the user lands on this page. We listen for the load event so we know
+        // when the underlying service is actually awake and responding.
+        if (iframe) {
+            iframe.addEventListener('load', () => {
+                iframeLoaded = true;
+                // Give the loaded page ~1.5s to render its UI, then fade the loader.
+                setTimeout(() => {
+                    loader && loader.classList.add('hidden');
+                }, 1500);
+            });
+        }
+
+        // Loading copy updates so user knows progress
+        const stage1Timeout = setTimeout(() => {
+            if (!iframeLoaded && loaderMsg) {
+                loaderMsg.textContent = 'Still waking up…';
+                loaderSub.textContent = 'Render free services take a moment to boot from cold.';
+            }
+        }, 25000);
+
+        const stage2Timeout = setTimeout(() => {
+            if (!iframeLoaded && loaderMsg) {
+                loaderMsg.textContent = 'Almost there…';
+                loaderSub.innerHTML = 'If this never finishes, the service may be blocking embedding. <a href="' + PRACTICE_URL + '" target="_blank" rel="noopener" style="color:var(--moss);text-decoration:underline;">Open in a new tab →</a>';
+            }
+        }, 60000);
+
+        const stage3Timeout = setTimeout(() => {
+            if (!iframeLoaded && loader) {
+                loader.innerHTML = `
+                    <p style="font-size: 1.05rem; margin-bottom: 0.5rem;">This module isn't loading inside the page.</p>
+                    <p class="loader-sub" style="margin-bottom: 1.25rem; max-width:340px;">The detector service may be blocking iframe embedding, or it failed to wake up. Try opening it directly.</p>
+                    <a href="${PRACTICE_URL}" target="_blank" rel="noopener" class="btn btn-primary">Open in new tab →</a>
+                `;
+            }
+        }, 120000);
+
+        // -- Modal helpers --
         function openModal() {
             if (!modal) return;
             modal.hidden = false;
-            // Force reflow then add 'is-open' for transition
             requestAnimationFrame(() => modal.classList.add('is-open'));
             modalYes && modalYes.focus();
         }
@@ -159,11 +200,6 @@
             if (video) { try { video.pause(); } catch (e) {} }
             if (stageVideo) stageVideo.classList.remove('stage-active');
             stagePractice.classList.add('stage-active');
-            // Load the iframe lazily — only when user opts in.
-            if (iframe && !iframe.src) {
-                iframe.src = PRACTICE_URL;
-            }
-            // Scroll to top of practice area
             stagePractice.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -181,29 +217,14 @@
                 try { video.pause(); } catch (e) {}
                 openModal();
             });
-        } else {
-            // No guide video configured → load the iframe immediately
-            if (iframe && !iframe.src) iframe.src = PRACTICE_URL;
         }
 
         modalYes && modalYes.addEventListener('click', startPractice);
         modalNo  && modalNo.addEventListener('click', watchAgain);
 
-        // ESC closes modal
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && modal && !modal.hidden) watchAgain();
         });
-
-        // Fallback for iframe load issues (X-Frame-Options blocks etc.)
-        setTimeout(() => {
-            if (iframe && iframe.src && loader && !loader.classList.contains('hidden')) {
-                loader.innerHTML = `
-                    <p style="font-size: 1.05rem; margin-bottom: 0.5rem;">This module can't be embedded.</p>
-                    <p class="loader-sub" style="margin-bottom: 1.25rem;">Browser security blocked the embed — common with webcam features.</p>
-                    <a href="${PRACTICE_URL}" target="_blank" rel="noopener" class="btn btn-primary">Open in new tab →</a>
-                `;
-            }
-        }, 90000);
     })();
 </script>
 {% endblock %}
