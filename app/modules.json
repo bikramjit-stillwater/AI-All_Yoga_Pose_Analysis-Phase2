@@ -1,0 +1,71 @@
+{
+  "site": {
+    "brand": "Stillwater Yoga",
+    "tagline": "AI-Guided Yoga Pose Analysis",
+    "subtitle": "Refine your practice with precise, real-time alignment feedback rooted in classical yoga principles.",
+    "main_website": "https://www.stillwater.yoga/",
+    "support_email": "support@stillwater.yoga"
+  },
+  "modules": [
+    {
+      "id": "tadasana-static",
+      "name": "Tadasana — Video Analysis",
+      "sanskrit": "ताडासन",
+      "english_name": "Mountain Pose",
+      "category": "Static Analysis",
+      "description": "Upload a video of your Tadasana practice and receive detailed alignment feedback across 6 ground-truth principles: stance, body balance, legs & knees, spine, shoulders & arms, and head & neck.",
+      "features": [
+        "6-step rule-based scoring",
+        "Per-step zoomed skeleton overlay",
+        "AI coaching from Gemini 2.5 Flash"
+      ],
+      "url": "https://static-tadasha-pose-detection-c3tk.onrender.com/",
+      "icon": "mountain",
+      "color": "sage",
+      "status": "live",
+      "input_mode": "Upload Video",
+      "embed_mode": "iframe",
+      "guide_video": "/static/video/practice-guide.mp4"
+    },
+    {
+      "id": "tadasana-realtime",
+      "name": "Tadasana — Live Webcam",
+      "sanskrit": "ताडासन",
+      "english_name": "Mountain Pose",
+      "category": "Real-Time Analysis",
+      "description": "Practice Tadasana in front of your webcam and receive live posture corrections. Skeleton overlay updates instantly as you adjust your alignment.",
+      "features": [
+        "Live webcam pose detection",
+        "MediaPipe skeleton overlay",
+        "Dynamic score & feedback"
+      ],
+      "url": "https://realtime-tadasha-pose-detection-hrp4.onrender.com/",
+      "icon": "camera",
+      "color": "ochre",
+      "status": "live",
+      "input_mode": "Webcam",
+      "embed_mode": "iframe",
+      "guide_video": "/static/video/practice-guide.mp4"
+    },
+    {
+      "id": "child-pose-static",
+      "name": "Balasana — Video Analysis",
+      "sanskrit": "बालासन",
+      "english_name": "Child's Pose",
+      "category": "Static Analysis",
+      "description": "Upload a video of your Balasana (Child's Pose) and receive multi-step alignment scoring with personalized coaching feedback for this restorative posture.",
+      "features": [
+        "Restorative posture scoring",
+        "Hip, spine & shoulder alignment checks",
+        "AI coaching from Gemini 2.5 Flash"
+      ],
+      "url": "https://static-chisld-pose-detection.onrender.com/",
+      "icon": "lotus",
+      "color": "river",
+      "status": "live",
+      "input_mode": "Upload Video",
+      "embed_mode": "iframe",
+      "guide_video": "/static/video/practice-guide.mp4"
+    }
+  ]
+}

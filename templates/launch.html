@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.name }} — {{ site.brand }}{% endblock %}
+
+{% block content %}
+<div class="launch-shell">
+
+    <header class="launch-bar">
+        <a href="/" class="launch-back" aria-label="Back to all modules">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4 L 6 10 L 12 16 M 6 10 H 16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span>All Postures</span>
+        </a>
+
+        <div class="launch-title">
+            <p class="launch-sanskrit">{{ module.sanskrit }}</p>
+            <h1>{{ module.name }}</h1>
+            <p class="launch-category">{{ module.category }} · {{ module.input_mode }}</p>
+        </div>
+
+        <div class="launch-actions">
+            <a href="{{ module.url }}" target="_blank" rel="noopener" class="launch-newtab">
+                <span>Open Full</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 H3 V13 H13 V10 M9 3 H13 V7 M13 3 L7 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- ==========================================================
+         STAGE 1 — Guide Video
+         Visible on load. Auto-plays muted. When it ends → modal.
+         ========================================================== -->
+    {% if module.guide_video %}
+    <section id="stageVideo" class="stage stage-active">
+        <div class="stage-intro">
+            <p class="stage-eyebrow">Step 1 of 2</p>
+            <h2 class="stage-title">Watch the <em>guide</em>.</h2>
+            <p class="stage-sub">A short orientation for <strong>{{ module.english_name }}</strong>. When the video ends, you'll be prompted to begin your evaluation.</p>
+        </div>
+
+        <div class="video-wrap">
+            <video id="guideVideo"
+                   controls
+                   playsinline
+                   preload="auto"
+                   autoplay
+                   muted>
+                <source src="{{ module.guide_video }}" type="video/mp4" />
+                Your browser does not support the video tag.
+            </video>
+
+            <button id="skipBtn" type="button" class="video-skip" aria-label="Skip guide">
+                <span>Skip Guide</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4 L9 8 L3 12 Z M11 4 V12" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round" /></svg>
+            </button>
+        </div>
+
+        <p class="video-help">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3" fill="none" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /><path d="M8 8 V 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+            Audio starts muted. Tap the speaker icon on the player to unmute.
+        </p>
+    </section>
+    {% endif %}
+
+    <!-- ==========================================================
+         STAGE 2 — Practice (the actual Streamlit app, embedded)
+         Hidden until user confirms "Start & Evaluate" in the modal.
+         ========================================================== -->
+    <section id="stagePractice" class="stage {% if not module.guide_video %}stage-active{% endif %}">
+        <div class="practice-frame-wrap">
+            <div class="launch-loader" id="loader">
+                <div class="ripple-loader"><span></span><span></span><span></span></div>
+                <p>Waking the practice space…</p>
+                <p class="loader-sub">First load can take 30–60s on free hosting.</p>
+            </div>
+
+            <iframe
+                id="practiceFrame"
+                src=""
+                title="{{ module.name }}"
+                allow="camera; microphone; autoplay; fullscreen; display-capture"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+                onload="document.getElementById('loader').classList.add('hidden')"></iframe>
+        </div>
+
+        <p class="practice-fallback">
+            Trouble loading?
+            <a href="{{ module.url }}" target="_blank" rel="noopener">Open in a new tab →</a>
+        </p>
+    </section>
+</div>
+
+<!-- ==========================================================
+     MODAL — Appears when video ends (or user clicks "Skip Guide")
+     ========================================================== -->
+<div id="readyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+        <div class="modal-icon" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="1.2" opacity="0.3" />
+                <circle cx="32" cy="32" r="20" stroke="currentColor" stroke-width="1.2" opacity="0.5" />
+                <circle cx="32" cy="32" r="12" stroke="currentColor" stroke-width="1.4" />
+                <circle cx="32" cy="32" r="3" fill="currentColor" />
+            </svg>
+        </div>
+
+        <p class="modal-eyebrow">{{ module.sanskrit }} · {{ module.english_name }}</p>
+        <h2 id="modalTitle" class="modal-title">Ready to <em>begin</em>?</h2>
+        <p class="modal-body">
+            You've seen the guide. Step onto your mat, then start your evaluation when you're ready.
+        </p>
+
+        <div class="modal-actions">
+            <button id="modalYes" type="button" class="btn btn-primary modal-btn-primary">
+                <span>Start &amp; Evaluate</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10 H 15 M10 5 L 15 10 L 10 15" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <button id="modalNo" type="button" class="btn btn-ghost modal-btn-ghost">
+                Watch Again
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const video       = document.getElementById('guideVideo');
+        const modal       = document.getElementById('readyModal');
+        const skipBtn     = document.getElementById('skipBtn');
+        const stageVideo  = document.getElementById('stageVideo');
+        const stagePractice = document.getElementById('stagePractice');
+        const iframe     = document.getElementById('practiceFrame');
+        const loader     = document.getElementById('loader');
+        const modalYes   = document.getElementById('modalYes');
+        const modalNo    = document.getElementById('modalNo');
+
+        const PRACTICE_URL = {{ module.url | tojson }};
+        const HAS_VIDEO    = !!video;
+
+        function openModal() {
+            if (!modal) return;
+            modal.hidden = false;
+            // Force reflow then add 'is-open' for transition
+            requestAnimationFrame(() => modal.classList.add('is-open'));
+            modalYes && modalYes.focus();
+        }
+
+        function closeModal() {
+            if (!modal) return;
+            modal.classList.remove('is-open');
+            setTimeout(() => { modal.hidden = true; }, 250);
+        }
+
+        function startPractice() {
+            closeModal();
+            if (video) { try { video.pause(); } catch (e) {} }
+            if (stageVideo) stageVideo.classList.remove('stage-active');
+            stagePractice.classList.add('stage-active');
+            // Load the iframe lazily — only when user opts in.
+            if (iframe && !iframe.src) {
+                iframe.src = PRACTICE_URL;
+            }
+            // Scroll to top of practice area
+            stagePractice.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function watchAgain() {
+            closeModal();
+            if (video) {
+                video.currentTime = 0;
+                video.play().catch(() => {});
+            }
+        }
+
+        if (HAS_VIDEO) {
+            video.addEventListener('ended', openModal);
+            skipBtn && skipBtn.addEventListener('click', () => {
+                try { video.pause(); } catch (e) {}
+                openModal();
+            });
+        } else {
+            // No guide video configured → load the iframe immediately
+            if (iframe && !iframe.src) iframe.src = PRACTICE_URL;
+        }
+
+        modalYes && modalYes.addEventListener('click', startPractice);
+        modalNo  && modalNo.addEventListener('click', watchAgain);
+
+        // ESC closes modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal && !modal.hidden) watchAgain();
+        });
+
+        // Fallback for iframe load issues (X-Frame-Options blocks etc.)
+        setTimeout(() => {
+            if (iframe && iframe.src && loader && !loader.classList.contains('hidden')) {
+                loader.innerHTML = `
+                    <p style="font-size: 1.05rem; margin-bottom: 0.5rem;">This module can't be embedded.</p>
+                    <p class="loader-sub" style="margin-bottom: 1.25rem;">Browser security blocked the embed — common with webcam features.</p>
+                    <a href="${PRACTICE_URL}" target="_blank" rel="noopener" class="btn btn-primary">Open in new tab →</a>
+                `;
+            }
+        }, 90000);
+    })();
+</script>
+{% endblock %}
