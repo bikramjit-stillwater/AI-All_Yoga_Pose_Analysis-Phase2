@@ -26,7 +26,7 @@
     </header>
 
     <!-- ==========================================================
-         STAGE 1 — Guide Video (visible by default)
+         STAGE 1 — Guide Video
          ========================================================== -->
     {% if module.guide_video %}
     <section id="stageVideo" class="stage stage-active">
@@ -61,17 +61,54 @@
     {% endif %}
 
     <!-- ==========================================================
-         STAGE 2 — Practice (iframe pre-loads NOW, hidden behind stage 1)
+         STAGE 2 — Practice
          ========================================================== -->
     <section id="stagePractice" class="stage {% if not module.guide_video %}stage-active{% endif %}">
+
+        <!-- Reassurance banner sits above the iframe so user knows what's happening -->
+        <div id="reassureBar" class="reassure-bar">
+            <div class="reassure-dot"></div>
+            <span id="reassureText">Your practice space is ready. Upload your video below to begin analysis.</span>
+        </div>
+
         <div class="practice-frame-wrap">
+            <!-- Initial loader (shown while iframe boots) -->
             <div class="launch-loader" id="loader">
-                <div class="ripple-loader"><span></span><span></span><span></span></div>
-                <p id="loaderMsg">Waking the practice space…</p>
-                <p class="loader-sub" id="loaderSub">First load can take 30–60s on free hosting.</p>
+                <div class="pro-spinner"></div>
+                <p id="loaderMsg" class="loader-title">Preparing your practice space…</p>
+                <p class="loader-sub" id="loaderSub">This usually takes 15–30 seconds on the first visit.</p>
+                <div class="loader-progress"><div class="loader-progress-bar"></div></div>
             </div>
 
-            <!-- Iframe src is set IMMEDIATELY so cold-start happens during video playback -->
+            <!-- Error overlay (shown when the user dismisses the iframe's browser alert) -->
+            <div class="launch-loader pro-error" id="errorOverlay" hidden>
+                <div class="error-icon" aria-hidden="true">
+                    <svg viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="1.4" />
+                        <path d="M32 20 V 36" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                        <circle cx="32" cy="44" r="2" fill="currentColor" />
+                    </svg>
+                </div>
+                <p class="loader-title" style="color:#7f1d1d">Analysis couldn't complete</p>
+                <p class="loader-sub" style="max-width: 380px;">
+                    The detector service is taking longer than expected — usually because the video is too long or the service is waking up.
+                </p>
+                <ul class="error-tips">
+                    <li>Try a clip <strong>under 15 seconds</strong></li>
+                    <li>Wait <strong>30 seconds</strong> and click retry</li>
+                    <li>Use a smaller file size</li>
+                </ul>
+                <div class="error-actions">
+                    <button type="button" id="retryBtn" class="btn btn-primary">
+                        <span>Retry Analysis</span>
+                        <svg viewBox="0 0 20 20" aria-hidden="true" style="width:16px;height:16px"><path d="M4 10 a 6 6 0 1 0 2-4.5 M3 4 V 7 H 6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                    <a href="{{ module.url }}" target="_blank" rel="noopener" class="btn btn-ghost">
+                        Open in new tab
+                    </a>
+                </div>
+            </div>
+
             <iframe
                 id="practiceFrame"
                 src="{{ module.url }}"
@@ -120,6 +157,108 @@
         </div>
     </div>
 </div>
+
+<!-- ==========================================================
+     INLINE STYLES for the polished states
+     (kept here so no styles.css change is needed)
+     ========================================================== -->
+<style>
+    .reassure-bar {
+        display: flex; align-items: center; gap: 0.6rem;
+        background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%);
+        border: 1px solid #6ee7b7;
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        margin: 0 0 1rem;
+        font-size: 0.88rem;
+        color: #047857;
+    }
+    .reassure-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
+        animation: pulseDot 2.4s ease-in-out infinite;
+    }
+    @keyframes pulseDot {
+        0%,100% { transform: scale(1);   opacity: 1; }
+        50%     { transform: scale(1.25); opacity: 0.7; }
+    }
+
+    .pro-spinner {
+        width: 56px; height: 56px;
+        border: 4px solid rgba(122,155,126,0.18);
+        border-top-color: var(--moss, #2A4A3A);
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        animation: proSpin 0.9s linear infinite;
+    }
+    @keyframes proSpin { to { transform: rotate(360deg); } }
+
+    .loader-title {
+        font-size: 1.1rem !important;
+        color: var(--moss, #2A4A3A) !important;
+        font-weight: 600;
+        margin: 0 0 0.5rem !important;
+    }
+    .loader-progress {
+        width: 220px; height: 4px;
+        background: rgba(122,155,126,0.15);
+        border-radius: 4px;
+        margin: 1.25rem auto 0;
+        overflow: hidden;
+    }
+    .loader-progress-bar {
+        width: 35%; height: 100%;
+        background: var(--moss, #2A4A3A);
+        border-radius: 4px;
+        animation: slide 1.8s ease-in-out infinite;
+    }
+    @keyframes slide {
+        0%   { transform: translateX(-100%); width: 35%; }
+        50%  { width: 70%; }
+        100% { transform: translateX(280%); width: 35%; }
+    }
+
+    .pro-error {
+        background: var(--paper, #FBF7EE) !important;
+    }
+    .error-icon {
+        width: 56px; height: 56px;
+        color: #c97b5b;
+        margin: 0 auto 1rem;
+    }
+    .error-icon svg { width: 100%; height: 100%; }
+    .error-tips {
+        list-style: none;
+        padding: 0;
+        margin: 1rem auto 1.5rem;
+        max-width: 320px;
+        text-align: left;
+        font-size: 0.85rem;
+        color: var(--ink-soft, #3D4A41);
+    }
+    .error-tips li {
+        padding: 0.35rem 0 0.35rem 1.25rem;
+        position: relative;
+    }
+    .error-tips li::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0.85rem;
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--ochre, #C97B5B);
+    }
+    .error-actions {
+        display: flex; gap: 0.6rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .error-actions .btn {
+        padding: 0.7rem 1.25rem;
+        font-size: 0.9rem;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -136,50 +275,138 @@
         const loaderSub     = document.getElementById('loaderSub');
         const modalYes      = document.getElementById('modalYes');
         const modalNo       = document.getElementById('modalNo');
+        const errorOverlay  = document.getElementById('errorOverlay');
+        const retryBtn      = document.getElementById('retryBtn');
+        const reassureBar   = document.getElementById('reassureBar');
+        const reassureText  = document.getElementById('reassureText');
 
         const PRACTICE_URL = {{ module.url | tojson }};
         const HAS_VIDEO    = !!video;
 
         let iframeLoaded = false;
+        let errorCheckInterval = null;
 
         // -- Iframe load tracking --
-        // Iframe src is already set in HTML, so it starts loading the moment
-        // the user lands on this page. We listen for the load event so we know
-        // when the underlying service is actually awake and responding.
         if (iframe) {
             iframe.addEventListener('load', () => {
                 iframeLoaded = true;
-                // Give the loaded page ~1.5s to render its UI, then fade the loader.
                 setTimeout(() => {
                     loader && loader.classList.add('hidden');
-                }, 1500);
+                    // Hide error overlay if it was showing
+                    if (errorOverlay) errorOverlay.hidden = true;
+                }, 1200);
             });
         }
 
-        // Loading copy updates so user knows progress
-        const stage1Timeout = setTimeout(() => {
+        // -- Progressive loading messages --
+        setTimeout(() => {
             if (!iframeLoaded && loaderMsg) {
-                loaderMsg.textContent = 'Still waking up…';
-                loaderSub.textContent = 'Render free services take a moment to boot from cold.';
+                loaderMsg.textContent = 'Almost ready…';
+                loaderSub.textContent = 'The service is finishing its wake-up. Hang tight.';
             }
-        }, 25000);
+        }, 30000);
 
-        const stage2Timeout = setTimeout(() => {
+        setTimeout(() => {
             if (!iframeLoaded && loaderMsg) {
-                loaderMsg.textContent = 'Almost there…';
-                loaderSub.innerHTML = 'If this never finishes, the service may be blocking embedding. <a href="' + PRACTICE_URL + '" target="_blank" rel="noopener" style="color:var(--moss);text-decoration:underline;">Open in a new tab →</a>';
+                loaderMsg.textContent = 'Taking longer than expected…';
+                loaderSub.innerHTML = 'You can wait or <a href="' + PRACTICE_URL + '" target="_blank" rel="noopener" style="color:var(--moss);text-decoration:underline;">open in a new tab</a>.';
             }
         }, 60000);
 
-        const stage3Timeout = setTimeout(() => {
-            if (!iframeLoaded && loader) {
-                loader.innerHTML = `
-                    <p style="font-size: 1.05rem; margin-bottom: 0.5rem;">This module isn't loading inside the page.</p>
-                    <p class="loader-sub" style="margin-bottom: 1.25rem; max-width:340px;">The detector service may be blocking iframe embedding, or it failed to wake up. Try opening it directly.</p>
-                    <a href="${PRACTICE_URL}" target="_blank" rel="noopener" class="btn btn-primary">Open in new tab →</a>
-                `;
+        setTimeout(() => {
+            if (!iframeLoaded) {
+                showError(
+                    'Service not responding',
+                    'The detector is taking too long to wake up. Please open in a new tab.'
+                );
             }
         }, 120000);
+
+        // -- Detect iframe browser-alert popups by watching focus loss/return --
+        // When the iframe shows alert(), the user clicks OK to dismiss. The iframe
+        // page then often shows an error state. We watch for focus events to detect
+        // this and surface our professional error UI.
+        let lastFocusTime = Date.now();
+        let suspectedAlertCount = 0;
+
+        window.addEventListener('blur', () => {
+            // If the iframe shows an alert(), the top window briefly blurs
+            const elapsed = Date.now() - lastFocusTime;
+            if (iframeLoaded && elapsed > 2000) {
+                suspectedAlertCount++;
+            }
+        });
+        window.addEventListener('focus', () => {
+            lastFocusTime = Date.now();
+            // If user just dismissed something that looked like an alert,
+            // wait a moment then check if the iframe shows an error
+            if (suspectedAlertCount > 0) {
+                setTimeout(() => {
+                    // After the alert is dismissed, give them the retry option
+                    if (reassureText) {
+                        reassureText.textContent = 'Looks like something didn\'t go through. Use Retry below if you saw an error.';
+                        reassureBar.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+                        reassureBar.style.borderColor = '#fca5a5';
+                        reassureBar.style.color = '#991b1b';
+                        const dot = reassureBar.querySelector('.reassure-dot');
+                        if (dot) dot.style.background = '#ef4444';
+                        if (dot) dot.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.25)';
+                    }
+                    showError(
+                        'Analysis didn\'t complete',
+                        'The detector returned an error. This usually means the video is too long or the service is recovering.'
+                    );
+                }, 800);
+                suspectedAlertCount = 0;
+            }
+        });
+
+        function showError(title, sub) {
+            if (!errorOverlay) return;
+            const t = errorOverlay.querySelector('.loader-title');
+            const s = errorOverlay.querySelector('.loader-sub');
+            if (t) t.textContent = title;
+            if (s) s.textContent = sub;
+            errorOverlay.hidden = false;
+            loader && loader.classList.add('hidden');
+        }
+
+        function hideError() {
+            if (errorOverlay) errorOverlay.hidden = true;
+        }
+
+        // -- Retry handler --
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => {
+                hideError();
+                // Reset reassure bar
+                if (reassureText) {
+                    reassureText.textContent = 'Reloading your practice space…';
+                    reassureBar.style.background = '';
+                    reassureBar.style.borderColor = '';
+                    reassureBar.style.color = '';
+                    const dot = reassureBar.querySelector('.reassure-dot');
+                    if (dot) { dot.style.background = ''; dot.style.boxShadow = ''; }
+                }
+                // Show loader again
+                if (loader) {
+                    loader.classList.remove('hidden');
+                    if (loaderMsg) loaderMsg.textContent = 'Reloading practice space…';
+                    if (loaderSub) loaderSub.textContent = 'Just a moment…';
+                }
+                // Reload the iframe
+                iframeLoaded = false;
+                if (iframe) {
+                    iframe.src = PRACTICE_URL + '?reload=' + Date.now();
+                }
+                // After 3 seconds, restore the upload-ready message
+                setTimeout(() => {
+                    if (reassureText && iframeLoaded) {
+                        reassureText.textContent = 'Your practice space is ready. Upload your video below to begin analysis.';
+                    }
+                }, 4000);
+            });
+        }
 
         // -- Modal helpers --
         function openModal() {
