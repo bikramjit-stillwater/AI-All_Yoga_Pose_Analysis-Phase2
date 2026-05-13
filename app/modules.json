@@ -3,7 +3,7 @@
     "brand": "Stillwater Yoga",
     "tagline": "AI-Guided Yoga Pose Analysis",
     "subtitle": "Refine your practice with precise, real-time alignment feedback rooted in classical yoga principles.",
-    "main_website": "https://www.stillwater.yoga/",
+    "main_website": "https://www.stillwater.you/",
     "support_email": "support@stillwater.yoga"
   },
   "modules": [
@@ -17,7 +17,7 @@
       "features": [
         "6-step rule-based scoring",
         "Per-step zoomed skeleton overlay",
-        "AI coaching from Gemini 2.5 Flash"
+        "AI coaching"
       ],
       "url": "https://static-tadasha-pose-detection-c3tk.onrender.com/",
       "icon": "mountain",
@@ -57,7 +57,7 @@
       "features": [
         "Restorative posture scoring",
         "Hip, spine & shoulder alignment checks",
-        "AI coaching from Gemini 2.5 Flash"
+        "AI coaching"
       ],
       "url": "https://static-chisld-pose-detection.onrender.com/",
       "icon": "lotus",
