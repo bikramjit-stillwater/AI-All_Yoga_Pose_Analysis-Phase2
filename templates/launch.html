@@ -40,9 +40,7 @@
             <video id="guideVideo"
                    controls
                    playsinline
-                   preload="auto"
-                   autoplay
-                   muted>
+                   preload="auto">
                 <source src="{{ module.guide_video }}" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
@@ -55,7 +53,7 @@
 
         <p class="video-help">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3" fill="none" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /><path d="M8 8 V 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-            Audio starts muted. Tap the speaker icon on the player to unmute.
+            Tap the play button to begin the guide with sound.
         </p>
     </section>
     {% endif %}
