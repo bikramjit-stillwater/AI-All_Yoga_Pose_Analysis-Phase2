@@ -26,7 +26,7 @@
     </header>
 
     <!-- ==========================================================
-         STAGE 1 — Guide Video (visible by default)
+         STAGE 1 — Guide Video + (optional) Agent Companion
          ========================================================== -->
     {% if module.guide_video %}
     <section id="stageVideo" class="stage stage-active">
@@ -36,32 +36,76 @@
             <p class="stage-sub">A short orientation for <strong>{{ module.english_name }}</strong>. The practice space is warming up in the background while you watch.</p>
         </div>
 
-        <div class="video-wrap">
-            <video id="guideVideo"
-                   controls
-                   playsinline
-                   preload="auto"
-                   autoplay
-                   muted>
-                <source src="{{ module.guide_video }}" type="video/mp4" />
-                Your browser does not support the video tag.
-            </video>
+        <div class="guide-row {% if not module.lemon_slice_agent %}guide-row-single{% endif %}">
 
-            <button id="skipBtn" type="button" class="video-skip" aria-label="Skip guide">
-                <span>Skip Guide</span>
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4 L9 8 L3 12 Z M11 4 V12" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round" /></svg>
-            </button>
+            <!-- Video column -->
+            <div class="guide-col guide-col-video">
+                <div class="video-wrap">
+                    <video id="guideVideo"
+                           controls
+                           playsinline
+                           preload="auto"
+                           autoplay
+                           muted>
+                        <source src="{{ module.guide_video }}" type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <button id="skipBtn" type="button" class="video-skip" aria-label="Skip guide">
+                        <span>Skip Guide</span>
+                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4 L9 8 L3 12 Z M11 4 V12" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round" /></svg>
+                    </button>
+                </div>
+
+                <p class="video-help">
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3" fill="none" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /><path d="M8 8 V 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+                    Audio starts muted. Tap the speaker icon on the player to unmute.
+                </p>
+            </div>
+
+            <!-- Agent companion column (only if module has lemon_slice_agent) -->
+            {% if module.lemon_slice_agent %}
+            <div class="guide-col guide-col-agent" id="agentCompanion">
+                <div class="agent-label">
+                    <span class="agent-label-dot"></span>
+                    AI Yoga Assistant
+                </div>
+                <div class="agent-wrap" id="agentWrap">
+                    <lemon-slice-widget agent-id="{{ module.lemon_slice_agent }}"></lemon-slice-widget>
+                </div>
+                <p class="agent-help">
+                    Tap the assistant to ask anything about <strong>{{ module.english_name }}</strong>.
+                </p>
+            </div>
+            {% endif %}
+
         </div>
-
-        <p class="video-help">
-            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3" fill="none" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /><path d="M8 8 V 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-            Audio starts muted. Tap the speaker icon on the player to unmute.
-        </p>
     </section>
     {% endif %}
 
     <!-- ==========================================================
-         STAGE 2 — Practice (iframe pre-loads NOW, hidden behind stage 1)
+         STAGE 1B — Agent-Focused Mode (only if module has agent)
+         ========================================================== -->
+    {% if module.lemon_slice_agent %}
+    <section id="stageAgent" class="stage">
+        <div class="agent-focused-bar">
+            <div>
+                <p class="stage-eyebrow" style="margin:0 0 0.3rem;">Talking with your Assistant</p>
+                <h2 class="agent-focused-title">Ask anything about <em>{{ module.english_name }}</em></h2>
+            </div>
+            <button id="continueToPracticeBtn" type="button" class="btn btn-primary">
+                <span>Continue to Practice</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true" style="width:18px;height:18px"><path d="M4 10 H 15 M10 5 L 15 10 L 10 15" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+        </div>
+        <div class="agent-focused-wrap">
+            <!-- The agent gets MOVED here by JS when user picks "Talk with Agent" -->
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ==========================================================
+         STAGE 2 — Practice (iframe)
          ========================================================== -->
     <section id="stagePractice" class="stage {% if not module.guide_video %}stage-active{% endif %}">
         <div class="practice-frame-wrap">
@@ -71,7 +115,6 @@
                 <p class="loader-sub" id="loaderSub">First load can take 30–60s on free hosting.</p>
             </div>
 
-            <!-- Iframe src is set IMMEDIATELY so cold-start happens during video playback -->
             <iframe
                 id="practiceFrame"
                 src="{{ module.url }}"
@@ -89,7 +132,8 @@
 </div>
 
 <!-- ==========================================================
-     MODAL — "Ready to Begin?"
+     MODAL — appears when video ends or user skips
+     Shows 3 buttons if agent exists, 2 if not
      ========================================================== -->
 <div id="readyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
     <div class="modal-backdrop"></div>
@@ -104,59 +148,231 @@
         </div>
 
         <p class="modal-eyebrow">{{ module.sanskrit }} · {{ module.english_name }}</p>
-        <h2 id="modalTitle" class="modal-title">Ready to <em>begin</em>?</h2>
+        <h2 id="modalTitle" class="modal-title">What's next?</h2>
         <p class="modal-body">
-            You've seen the guide. Step onto your mat, then start your evaluation when you're ready.
+            You've seen the guide. Choose how you'd like to continue your practice.
         </p>
 
         <div class="modal-actions">
             <button id="modalYes" type="button" class="btn btn-primary modal-btn-primary">
-                <span>Start &amp; Evaluate</span>
+                <span>Practice Now</span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10 H 15 M10 5 L 15 10 L 10 15" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
+
+            {% if module.lemon_slice_agent %}
+            <button id="modalTalk" type="button" class="btn btn-talk modal-btn-talk">
+                <svg viewBox="0 0 20 20" aria-hidden="true" style="width:18px;height:18px"><path d="M3 5 H17 V13 H11 L7 17 V13 H3 Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+                <span>Talk with the Agent</span>
+            </button>
+            {% endif %}
+
             <button id="modalNo" type="button" class="btn btn-ghost modal-btn-ghost">
                 Watch Again
             </button>
         </div>
     </div>
 </div>
+
+<!-- Lemon Slice loader (only if needed) -->
+{% if module.lemon_slice_agent %}
+<script type="module" src="https://unpkg.com/@lemonsliceai/lemon-slice-widget"></script>
+{% endif %}
+
+<!-- =========================================================
+     Inline styles — agent companion, focused mode, new button
+     ========================================================= -->
+<style>
+    /* Two-column guide row: video left, agent right */
+    .guide-row {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        align-items: center;       /* middle-align agent vs video */
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        flex-wrap: wrap;
+    }
+    .guide-row-single { justify-content: center; }
+
+    .guide-col {
+        display: flex;
+        flex-direction: column;
+        min-width: 280px;
+    }
+    .guide-col-video {
+        flex: 0 1 420px;
+        align-items: center;
+    }
+    .guide-col-agent {
+        flex: 0 1 340px;
+        align-self: center;
+    }
+
+    .agent-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--sage-deep, #4D6E55);
+        margin: 0 0 0.7rem;
+        font-weight: 600;
+        align-self: center;
+    }
+    .agent-label-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: var(--sage, #7A9B7E);
+        box-shadow: 0 0 0 3px rgba(122,155,126,0.25);
+        animation: agentPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes agentPulse {
+        0%,100% { transform: scale(1);   opacity: 1; }
+        50%     { transform: scale(1.25); opacity: 0.6; }
+    }
+
+    .agent-wrap {
+        background: var(--paper, #FBF7EE);
+        border: 1px solid var(--line, rgba(31,42,36,0.12));
+        border-radius: 20px;
+        padding: 0.75rem;
+        box-shadow: 0 1px 2px rgba(31,42,36,0.04),
+                    0 16px 36px -16px rgba(31,42,36,0.18);
+        min-height: 360px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .agent-wrap lemon-slice-widget {
+        width: 100%;
+        height: 100%;
+        min-height: 340px;
+        display: block;
+    }
+    .agent-help {
+        text-align: center;
+        margin: 0.8rem auto 0;
+        font-size: 0.8rem;
+        color: var(--stone, #B5AB97);
+        max-width: 320px;
+        line-height: 1.4;
+    }
+
+    /* Focused agent mode (when user picks "Talk with the Agent") */
+    .agent-focused-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        max-width: 1100px;
+        margin: 0 auto 1.25rem;
+        padding: 0 1rem;
+        flex-wrap: wrap;
+    }
+    .agent-focused-title {
+        font-family: var(--font-display, "Fraunces", Georgia, serif);
+        font-weight: 300;
+        font-size: clamp(1.4rem, 3.5vw, 2rem);
+        color: var(--moss, #2A4A3A);
+        margin: 0;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+    }
+    .agent-focused-title em {
+        font-style: italic;
+        color: var(--ochre-deep, #A35A3F);
+        font-weight: 400;
+    }
+    .agent-focused-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    /* When agent is in focused mode, give it more room */
+    .agent-focused-wrap .agent-wrap {
+        min-height: 560px;
+        border-radius: 24px;
+        padding: 1.25rem;
+    }
+    .agent-focused-wrap .agent-wrap lemon-slice-widget {
+        min-height: 540px;
+    }
+    .agent-focused-wrap .agent-label,
+    .agent-focused-wrap .agent-help { display: none; }
+
+    /* New "Talk with the Agent" button — warm ochre/sage accent */
+    .btn-talk {
+        background: var(--sage-deep, #4D6E55);
+        color: var(--paper, #FBF7EE);
+        border: 1px solid var(--sage-deep, #4D6E55);
+    }
+    .btn-talk:hover {
+        background: var(--moss, #2A4A3A);
+        border-color: var(--moss, #2A4A3A);
+    }
+    .modal-btn-talk {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1.5rem;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    /* Mobile / narrow viewports: stack vertically */
+    @media (max-width: 920px) {
+        .guide-row { flex-direction: column; align-items: center; }
+        .guide-col { max-width: 100%; width: 100%; }
+        .guide-col-agent { flex: 1 1 auto; }
+        .agent-wrap { min-height: 320px; }
+        .agent-wrap lemon-slice-widget { min-height: 300px; }
+        .agent-focused-bar { flex-direction: column; align-items: flex-start; }
+        .agent-focused-bar .btn { width: 100%; justify-content: center; }
+        .agent-focused-wrap .agent-wrap { min-height: 460px; }
+        .agent-focused-wrap .agent-wrap lemon-slice-widget { min-height: 440px; }
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
     (function () {
-        const video         = document.getElementById('guideVideo');
-        const modal         = document.getElementById('readyModal');
-        const skipBtn       = document.getElementById('skipBtn');
-        const stageVideo    = document.getElementById('stageVideo');
-        const stagePractice = document.getElementById('stagePractice');
-        const iframe        = document.getElementById('practiceFrame');
-        const loader        = document.getElementById('loader');
-        const loaderMsg     = document.getElementById('loaderMsg');
-        const loaderSub     = document.getElementById('loaderSub');
-        const modalYes      = document.getElementById('modalYes');
-        const modalNo       = document.getElementById('modalNo');
+        const video           = document.getElementById('guideVideo');
+        const modal           = document.getElementById('readyModal');
+        const skipBtn         = document.getElementById('skipBtn');
+        const stageVideo      = document.getElementById('stageVideo');
+        const stageAgent      = document.getElementById('stageAgent');
+        const stagePractice   = document.getElementById('stagePractice');
+        const iframe          = document.getElementById('practiceFrame');
+        const loader          = document.getElementById('loader');
+        const loaderMsg       = document.getElementById('loaderMsg');
+        const loaderSub       = document.getElementById('loaderSub');
+        const modalYes        = document.getElementById('modalYes');
+        const modalNo         = document.getElementById('modalNo');
+        const modalTalk       = document.getElementById('modalTalk');
+        const agentCompanion  = document.getElementById('agentCompanion');
+        const continueBtn     = document.getElementById('continueToPracticeBtn');
 
         const PRACTICE_URL = {{ module.url | tojson }};
         const HAS_VIDEO    = !!video;
+        const HAS_AGENT    = !!agentCompanion;
 
         let iframeLoaded = false;
 
         // -- Iframe load tracking --
-        // Iframe src is already set in HTML, so it starts loading the moment
-        // the user lands on this page. We listen for the load event so we know
-        // when the underlying service is actually awake and responding.
         if (iframe) {
             iframe.addEventListener('load', () => {
                 iframeLoaded = true;
-                // Give the loaded page ~1.5s to render its UI, then fade the loader.
                 setTimeout(() => {
                     loader && loader.classList.add('hidden');
                 }, 1500);
             });
         }
 
-        // Loading copy updates so user knows progress
         const stage1Timeout = setTimeout(() => {
             if (!iframeLoaded && loaderMsg) {
                 loaderMsg.textContent = 'Still waking up…';
@@ -195,12 +411,30 @@
             setTimeout(() => { modal.hidden = true; }, 250);
         }
 
-        function startPractice() {
+        // -- Stage switching helpers --
+        function switchToPractice() {
             closeModal();
             if (video) { try { video.pause(); } catch (e) {} }
-            if (stageVideo) stageVideo.classList.remove('stage-active');
+            if (stageVideo)   stageVideo.classList.remove('stage-active');
+            if (stageAgent)   stageAgent.classList.remove('stage-active');
             stagePractice.classList.add('stage-active');
             stagePractice.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function switchToAgent() {
+            closeModal();
+            if (!stageAgent || !agentCompanion) return;
+            if (video) { try { video.pause(); } catch (e) {} }
+
+            // Move the agent's whole companion column into the focused wrap
+            const focusedWrap = stageAgent.querySelector('.agent-focused-wrap');
+            if (focusedWrap && !focusedWrap.contains(agentCompanion)) {
+                focusedWrap.appendChild(agentCompanion);
+            }
+
+            if (stageVideo) stageVideo.classList.remove('stage-active');
+            stageAgent.classList.add('stage-active');
+            stageAgent.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function watchAgain() {
@@ -219,8 +453,10 @@
             });
         }
 
-        modalYes && modalYes.addEventListener('click', startPractice);
-        modalNo  && modalNo.addEventListener('click', watchAgain);
+        modalYes  && modalYes.addEventListener('click', switchToPractice);
+        modalTalk && modalTalk.addEventListener('click', switchToAgent);
+        modalNo   && modalNo.addEventListener('click', watchAgain);
+        continueBtn && continueBtn.addEventListener('click', switchToPractice);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && modal && !modal.hidden) watchAgain();
