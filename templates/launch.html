@@ -164,7 +164,15 @@
 </button>
 
 <div id="lemonWidgetContainer" class="lemon-hidden">
-    <lemon-slice-widget agent-id="{{ module.lemon_slice_agent }}"></lemon-slice-widget>
+    <lemon-slice-widget
+        agent-id="{{ module.lemon_slice_agent }}"
+        custom-minimized-width="144"
+        custom-minimized-height="216"
+        custom-active-width="320"
+        custom-active-height="480"
+        show-minimize-button="true"
+        initial-state="active">
+    </lemon-slice-widget>
 </div>
 
 <script type="module" src="https://unpkg.com/@lemonsliceai/lemon-slice-widget"></script>
