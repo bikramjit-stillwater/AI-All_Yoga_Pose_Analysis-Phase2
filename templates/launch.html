@@ -158,11 +158,11 @@
 
 <!-- ==========================================================
      STATIC AVATAR (silent — visible by default)
-     User must click to wake the live Lemon Slice agent
+     User must click to wake the live Lemon Slice agent + auto-join call
      ========================================================== -->
 {% if module.lemon_slice_agent %}
 
-<button id="staticAvatarBtn" class="static-avatar-btn" type="button" aria-label="Tap to talk with your AI yoga assistant">
+<button id="staticAvatarBtn" class="static-avatar-btn" type="button" aria-label="Tap to start a call with your AI yoga assistant">
     <img src="/static/img/yoga-avatar.jpg" alt="" class="static-avatar-img" />
     <span class="static-avatar-label">
         <span class="static-avatar-pulse"></span>
@@ -172,6 +172,7 @@
 
 <div id="lemonWidgetContainer" class="lemon-hidden">
     <lemon-slice-widget
+        id="lemonSliceWidget"
         agent-id="{{ module.lemon_slice_agent }}"
         custom-minimized-width="144"
         custom-minimized-height="216"
@@ -416,6 +417,7 @@
         const practiceFromAgent = document.getElementById('practiceFromAgent');
         const staticAvatarBtn   = document.getElementById('staticAvatarBtn');
         const lemonWidget       = document.getElementById('lemonWidgetContainer');
+        const lemonSliceWidget  = document.getElementById('lemonSliceWidget');
         const unmuteBtn         = document.getElementById('unmuteBtn');
 
         const PRACTICE_URL = {{ module.url | tojson }};
@@ -458,16 +460,45 @@
             }
         }, 120000);
 
-        // -- Static avatar → activate live agent --
-        function activateAgent() {
+        // -- Activate agent + auto-start call (mic on, speaker unmuted) --
+        async function activateAgent() {
             if (agentActivated) return;
             agentActivated = true;
+
+            // Hide static avatar, show widget container
             if (staticAvatarBtn) {
                 staticAvatarBtn.classList.add('static-avatar-hidden');
                 setTimeout(() => { staticAvatarBtn.style.display = 'none'; }, 350);
             }
             if (lemonWidget) {
                 lemonWidget.classList.remove('lemon-hidden');
+            }
+
+            // Auto-start the call using LemonSlice's official widget API.
+            // micOn() auto-joins the room. unmute() ensures speaker is on.
+            // Both must run WITHIN this user-gesture context so the browser
+            // allows audio + mic access.
+            if (!lemonSliceWidget) return;
+
+            // Small delay to let the widget mount/initialize
+            try {
+                // Wait briefly for the widget's methods to be available
+                let tries = 0;
+                while (typeof lemonSliceWidget.micOn !== 'function' && tries < 40) {
+                    await new Promise(r => setTimeout(r, 100));
+                    tries++;
+                }
+
+                if (typeof lemonSliceWidget.micOn === 'function') {
+                    await lemonSliceWidget.micOn();
+                }
+                if (typeof lemonSliceWidget.unmute === 'function') {
+                    await lemonSliceWidget.unmute();
+                }
+            } catch (err) {
+                // If auto-start fails (e.g. user denies mic permission),
+                // the widget still works — user can click Join Call manually.
+                console.warn('Auto-start agent failed:', err);
             }
         }
         if (staticAvatarBtn) {
@@ -497,10 +528,10 @@
             stagePractice.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function talkWithAgent() {
+        async function talkWithAgent() {
             closeModal();
             if (video) { try { video.pause(); } catch (e) {} }
-            activateAgent();
+            await activateAgent();
             if (practicePrompt) practicePrompt.hidden = false;
         }
 
@@ -526,7 +557,6 @@
             const playPromise = video.play();
             if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch(() => {
-                    // Browser blocked sound → mute and try again
                     video.muted = true;
                     video.play().catch(() => {});
                     if (unmuteBtn) unmuteBtn.hidden = false;
