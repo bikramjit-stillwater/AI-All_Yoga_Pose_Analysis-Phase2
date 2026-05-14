@@ -40,7 +40,8 @@
             <video id="guideVideo"
                    controls
                    playsinline
-                   preload="auto">
+                   preload="auto"
+                   autoplay>
                 <source src="{{ module.guide_video }}" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
@@ -49,11 +50,19 @@
                 <span>Skip Guide</span>
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4 L9 8 L3 12 Z M11 4 V12" stroke="currentColor" stroke-width="1.5" fill="currentColor" stroke-linejoin="round" /></svg>
             </button>
+
+            <button id="unmuteBtn" type="button" class="video-unmute" hidden aria-label="Unmute video">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 7 H7 L11 4 V16 L7 13 H4 Z" fill="currentColor" />
+                    <path d="M14 7 L18 13 M18 7 L14 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                <span>Tap for sound</span>
+            </button>
         </div>
 
         <p class="video-help">
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3" fill="none" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /><path d="M8 8 V 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
-            Tap the play button to begin the guide with sound.
+            Audio plays automatically. If you don't hear sound, tap the speaker icon.
         </p>
     </section>
     {% endif %}
@@ -169,7 +178,11 @@
         custom-active-width="195"
         custom-active-height="295"
         show-minimize-button="true"
-        initial-state="active">
+        initial-state="active"
+        muted="false"
+        start-muted="false"
+        speaker-on="true"
+        audio-enabled="true">
     </lemon-slice-widget>
 </div>
 
@@ -326,6 +339,42 @@
     /* Lemon Slice container — hidden until avatar clicked */
     .lemon-hidden { display: none !important; }
 
+    /* "Tap for sound" overlay on video — shown when browser blocks audio */
+    .video-unmute {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.85rem;
+        background: rgba(31, 42, 36, 0.86);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        color: var(--paper, #FBF7EE);
+        border: 1px solid rgba(244, 239, 230, 0.22);
+        border-radius: 100px;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.25s var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+        animation: unmuteWiggle 1.6s ease-in-out infinite;
+    }
+    .video-unmute[hidden] { display: none; }
+    .video-unmute:hover {
+        background: rgba(31, 42, 36, 0.95);
+        transform: translateY(-1px);
+        animation: none;
+    }
+    .video-unmute svg { width: 14px; height: 14px; }
+    @keyframes unmuteWiggle {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.06); }
+    }
+
     /* Mobile */
     @media (max-width: 600px) {
         .static-avatar-btn {
@@ -371,6 +420,7 @@
         const practiceFromAgent = document.getElementById('practiceFromAgent');
         const staticAvatarBtn   = document.getElementById('staticAvatarBtn');
         const lemonWidget       = document.getElementById('lemonWidgetContainer');
+        const unmuteBtn         = document.getElementById('unmuteBtn');
 
         const PRACTICE_URL = {{ module.url | tojson }};
         const HAS_VIDEO    = !!video;
@@ -451,8 +501,6 @@
             stagePractice.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // -- User chose "Talk with the Agent" --
-        // Activate the live agent + show the floating "Practice Now" prompt
         function talkWithAgent() {
             closeModal();
             if (video) { try { video.pause(); } catch (e) {} }
@@ -475,6 +523,25 @@
                 try { video.pause(); } catch (e) {}
                 openModal();
             });
+
+            // Try to autoplay WITH sound. If browser blocks it,
+            // fall back to muted autoplay + show "Tap for sound" button.
+            video.muted = false;
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {
+                    // Browser blocked sound → mute and try again
+                    video.muted = true;
+                    video.play().catch(() => {});
+                    if (unmuteBtn) unmuteBtn.hidden = false;
+                });
+            }
+            if (unmuteBtn) {
+                unmuteBtn.addEventListener('click', () => {
+                    video.muted = false;
+                    unmuteBtn.hidden = true;
+                });
+            }
         }
 
         modalYes  && modalYes.addEventListener('click', switchToPractice);
