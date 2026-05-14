@@ -25,7 +25,8 @@
       "status": "live",
       "input_mode": "Upload Video",
       "embed_mode": "iframe",
-      "guide_video": "/static/video/practice-guide.mp4"
+      "guide_video": "/static/video/practice-guide.mp4",
+      "lemon_slice_agent": "agent_77081533e48ba693"
     },
     {
       "id": "tadasana-realtime",
@@ -45,7 +46,8 @@
       "status": "live",
       "input_mode": "Webcam",
       "embed_mode": "iframe",
-      "guide_video": "/static/video/practice-guide.mp4"
+      "guide_video": "/static/video/practice-guide.mp4",
+      "lemon_slice_agent": "agent_77081533e48ba693"
     },
     {
       "id": "child-pose-static",
