@@ -26,7 +26,7 @@
     </header>
 
     <!-- ==========================================================
-         STAGE 1 — Guide Video (centered, no inline agent box)
+         STAGE 1 — Guide Video
          ========================================================== -->
     {% if module.guide_video %}
     <section id="stageVideo" class="stage stage-active">
@@ -129,17 +129,18 @@
 </div>
 
 <!-- ==========================================================
-     Floating "Practice Now" prompt
-     Shown after user clicks "Talk with the Agent"
+     Floating "Practice Now" prompt — appears after agent is opened
      ========================================================== -->
 {% if module.lemon_slice_agent %}
 <div id="practicePrompt" class="practice-prompt" hidden>
     <div class="practice-prompt-card">
-        <p class="practice-prompt-eyebrow">
-            <span class="practice-prompt-dot"></span>
-            Take your time
-        </p>
-        <p class="practice-prompt-text">When you're done chatting, begin your evaluation.</p>
+        <div>
+            <p class="practice-prompt-eyebrow">
+                <span class="practice-prompt-dot"></span>
+                Take your time
+            </p>
+            <p class="practice-prompt-text">When you're done chatting, begin your evaluation.</p>
+        </div>
         <button id="practiceFromAgent" type="button" class="btn btn-primary practice-prompt-btn">
             <span>Practice Now</span>
             <svg viewBox="0 0 20 20" aria-hidden="true" style="width:16px;height:16px"><path d="M4 10 H 15 M10 5 L 15 10 L 10 15" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -149,14 +150,30 @@
 {% endif %}
 
 <!-- ==========================================================
-     Lemon Slice agent widget (renders as floating UI)
+     STATIC AVATAR (silent — visible by default)
+     User must click to wake the live Lemon Slice agent
      ========================================================== -->
 {% if module.lemon_slice_agent %}
-<lemon-slice-widget agent-id="{{ module.lemon_slice_agent }}"></lemon-slice-widget>
+
+<button id="staticAvatarBtn" class="static-avatar-btn" type="button" aria-label="Tap to talk with your AI yoga assistant">
+    <img src="/static/img/yoga-avatar.jpg" alt="" class="static-avatar-img" />
+    <span class="static-avatar-label">
+        <span class="static-avatar-pulse"></span>
+        Tap to talk
+    </span>
+</button>
+
+<div id="lemonWidgetContainer" class="lemon-hidden">
+    <lemon-slice-widget agent-id="{{ module.lemon_slice_agent }}"></lemon-slice-widget>
+</div>
+
 <script type="module" src="https://unpkg.com/@lemonsliceai/lemon-slice-widget"></script>
+
 {% endif %}
 
-<!-- Styles for the new "Talk" button and "Practice Now" floating prompt -->
+<!-- ==========================================================
+     STYLES — talk button, floating prompt, static avatar
+     ========================================================== -->
 <style>
     /* "Talk with the Agent" button — warm sage tone */
     .btn-talk {
@@ -178,23 +195,20 @@
         gap: 0.55rem;
     }
 
-    /* Floating "Practice Now" prompt at bottom of page */
+    /* Floating "Practice Now" prompt at bottom */
     .practice-prompt {
         position: fixed;
         bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 24px;
         z-index: 80;
         animation: promptSlideUp 0.4s var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
         max-width: 95%;
     }
     .practice-prompt[hidden] { display: none; }
-
     @keyframes promptSlideUp {
-        from { opacity: 0; transform: translate(-50%, 20px); }
-        to   { opacity: 1; transform: translate(-50%, 0); }
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
-
     .practice-prompt-card {
         background: var(--paper, #FBF7EE);
         border: 1px solid var(--line-strong, rgba(31,42,36,0.22));
@@ -205,9 +219,8 @@
         display: flex;
         align-items: center;
         gap: 1.25rem;
-        max-width: 480px;
+        max-width: 460px;
     }
-
     .practice-prompt-eyebrow {
         display: inline-flex;
         align-items: center;
@@ -230,25 +243,94 @@
         0%,100% { transform: scale(1);   opacity: 1; }
         50%     { transform: scale(1.25); opacity: 0.6; }
     }
-
     .practice-prompt-text {
         margin: 0;
         font-size: 0.88rem;
         color: var(--ink-soft, #3D4A41);
         line-height: 1.35;
-        flex: 1;
         min-width: 180px;
     }
-    .practice-prompt-text br { display: none; }
-
     .practice-prompt-btn {
         flex-shrink: 0;
         padding: 0.65rem 1.1rem !important;
         font-size: 0.88rem !important;
     }
 
-    /* Mobile — stack vertically */
+    /* Static avatar (click-to-start agent) */
+    .static-avatar-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 180px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 9999;
+        transition: transform 0.25s var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
+                    opacity 0.3s ease;
+    }
+    .static-avatar-btn:hover { transform: translateY(-3px) scale(1.02); }
+    .static-avatar-btn.static-avatar-hidden {
+        opacity: 0;
+        transform: translateY(20px) scale(0.92);
+        pointer-events: none;
+    }
+    .static-avatar-img {
+        width: 100%;
+        height: auto;
+        border-radius: 22px;
+        display: block;
+        box-shadow: 0 10px 30px rgba(31, 42, 36, 0.22),
+                    0 2px 6px rgba(31, 42, 36, 0.1);
+        background: var(--paper, #FBF7EE);
+    }
+    .static-avatar-label {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: rgba(31, 42, 36, 0.86);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        color: var(--paper, #FBF7EE);
+        padding: 0.4rem 0.8rem;
+        border-radius: 100px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    .static-avatar-pulse {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #6ee7b7;
+        box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.7);
+        animation: avatarPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes avatarPulse {
+        0%   { box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.7); }
+        70%  { box-shadow: 0 0 0 12px rgba(110, 231, 183, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(110, 231, 183, 0); }
+    }
+
+    /* Lemon Slice container — hidden until avatar clicked */
+    .lemon-hidden { display: none !important; }
+
+    /* Mobile */
     @media (max-width: 600px) {
+        .static-avatar-btn {
+            width: 130px;
+            bottom: 16px;
+            right: 16px;
+        }
+        .static-avatar-label {
+            font-size: 0.72rem;
+            padding: 0.35rem 0.65rem;
+        }
         .practice-prompt-card {
             flex-direction: column;
             align-items: stretch;
@@ -281,11 +363,14 @@
         const modalTalk         = document.getElementById('modalTalk');
         const practicePrompt    = document.getElementById('practicePrompt');
         const practiceFromAgent = document.getElementById('practiceFromAgent');
+        const staticAvatarBtn   = document.getElementById('staticAvatarBtn');
+        const lemonWidget       = document.getElementById('lemonWidgetContainer');
 
         const PRACTICE_URL = {{ module.url | tojson }};
         const HAS_VIDEO    = !!video;
 
         let iframeLoaded = false;
+        let agentActivated = false;
 
         // -- Iframe load tracking --
         if (iframe) {
@@ -321,6 +406,22 @@
             }
         }, 120000);
 
+        // -- Static avatar → activate live agent --
+        function activateAgent() {
+            if (agentActivated) return;
+            agentActivated = true;
+            if (staticAvatarBtn) {
+                staticAvatarBtn.classList.add('static-avatar-hidden');
+                setTimeout(() => { staticAvatarBtn.style.display = 'none'; }, 350);
+            }
+            if (lemonWidget) {
+                lemonWidget.classList.remove('lemon-hidden');
+            }
+        }
+        if (staticAvatarBtn) {
+            staticAvatarBtn.addEventListener('click', activateAgent);
+        }
+
         // -- Modal helpers --
         function openModal() {
             if (!modal) return;
@@ -335,7 +436,6 @@
             setTimeout(() => { modal.hidden = true; }, 250);
         }
 
-        // -- Switch to practice (iframe) stage --
         function switchToPractice() {
             closeModal();
             if (video) { try { video.pause(); } catch (e) {} }
@@ -346,14 +446,12 @@
         }
 
         // -- User chose "Talk with the Agent" --
-        // Just close modal and show floating "Practice Now" prompt at the bottom.
-        // The Lemon Slice widget is already visible on the page.
+        // Activate the live agent + show the floating "Practice Now" prompt
         function talkWithAgent() {
             closeModal();
             if (video) { try { video.pause(); } catch (e) {} }
-            if (practicePrompt) {
-                practicePrompt.hidden = false;
-            }
+            activateAgent();
+            if (practicePrompt) practicePrompt.hidden = false;
         }
 
         function watchAgain() {
